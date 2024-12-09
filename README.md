@@ -13,3 +13,7 @@ Use at your own risk, You download and run it it's your issue is something break
 Don't cry to me. You were warned.
 You may not sell this code as your own or modify it.
 
+
+Ok - I'll fill all this in with directions later.
+
+Right now it allows connections without needing a client cert.
