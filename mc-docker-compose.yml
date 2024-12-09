@@ -1,0 +1,151 @@
+# @copywright In-Game event, A Red Flag Syndicate LLC
+#
+# Sponsored by In-Game Event, A Red Flag Syndicate LLC.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#
+services:
+  # Mirth Connect Service 1
+  mc-connect-1:
+    image: nextgenhealthcare/connect:4.5.2
+    container_name: mc-connect-1
+    user: "1000:1000"
+    environment:
+      - DATABASE=postgres
+      - DATABASE_URL=jdbc:postgresql://mc-postgres:5432/mirthdb1?currentSchema=mirthdb1
+      - DATABASE_USERNAME=mirthuser1
+      - DATABASE_PASSWORD=mirthpassword1
+      - KEYSTORE_STOREPASS=changeme
+      - KEYSTORE_KEYPASS=changeme
+      - VMOPTIONS=-Xmx512m
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
+      - ./mc/mc-data/mc-connect-1/appdata:/opt/connect/appdata:rw
+      - ./mc/mc-data/mc-connect-1/custom-extensions:/opt/connect/custom-extensions:rw
+      - ./mc/mc-data/mc-connect-1/custom-lib:/opt/connect/custom-lib:rw
+      - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
+    networks:
+      - mc-network
+    depends_on:
+      - mc-postgres
+
+  mc-connect-2:
+    image: nextgenhealthcare/connect:4.5.2
+    container_name: mc-connect-2
+    user: "1000:1000"
+    environment:
+      - DATABASE=postgres
+      - DATABASE_URL=jdbc:postgresql://mc-postgres:5432/mirthdb2?currentSchema=mirthdb2
+      - DATABASE_USERNAME=mirthuser2
+      - DATABASE_PASSWORD=mirthpassword2
+      - KEYSTORE_STOREPASS=changeme
+      - KEYSTORE_KEYPASS=changeme
+      - VMOPTIONS=-Xmx512m
+    ports:
+      - "8444:8443"
+    volumes:
+      - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
+      - ./mc/mc-data/mc-connect-2/appdata:/opt/connect/appdata:rw
+      - ./mc/mc-data/mc-connect-2/custom-extensions:/opt/connect/custom-extensions:rw
+      - ./mc/mc-data/mc-connect-2/custom-lib:/opt/connect/custom-lib:rw
+      - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
+    networks:
+      - mc-network
+    depends_on:
+      - mc-postgres
+
+  # Stunnel Service for SSL Termination
+  mc-stunnel:
+    build:
+      context: .  # Build from the stunnel.Dockerfile in the current directory
+      dockerfile: stunnel.Dockerfile  # Specify the stunnel Dockerfile# Specify the version (not latest)
+    container_name: mc-stunnel-container
+    ports:
+      - "6666:6666"
+    volumes:
+      - ./stunnel.conf:/etc/stunnel/stunnel.conf  # Stunnel configuration file
+      - ./stunnel_certs/channel1_server_cert.pem:/etc/stunnel/channel1_server_cert.pem
+      - ./stunnel_certs/channel1_server_key.pem:/etc/stunnel/channel1_server_key.pem
+    networks:
+      - mc-network
+    depends_on:
+      - mc-connect-1
+      - mc-connect-2
+      - mc-haproxy
+
+  # HAProxy for Load Balancing
+  mc-haproxy:
+    image: haproxy:2.4
+    container_name: mc-haproxy-container
+    expose:
+      - '6666'
+      - '7777'
+      - '5555'
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg  # HAProxy configuration
+    networks:
+      - mc-network
+    depends_on:
+      - mc-connect-1
+      - mc-connect-2
+
+  mc-postgres:
+    image: postgres:17.2
+    container_name: mc-postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - ./mc/mc-postgres-data:/var/lib/postgresql/data  # Mount PostgreSQL data volume
+      - ./startup_files/postgres-init:/docker-entrypoint-initdb.d  # Mount the init script here
+    networks:
+      - mc-network
+
+  mc-pgadmin:
+    image: dpage/pgadmin4
+    container_name: mc-pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@mc.com
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    ports:
+      - "8080:80"
+    networks:
+      - mc-network
+    depends_on:
+      - mc-postgres
+
+volumes:
+  mc-postgres-data:
+    driver: local
+  mc-pgadmin-data:
+    driver: local
+  mc-connect-1-appdata:
+    driver: local
+  mc-connect-1-custom-extensions:
+    driver: local
+  mc-connect-1-extensions:
+    driver: local
+  mc-connect-1-conf:
+    driver: local
+  mc-connect-1-custom-lib:
+    driver: local
+  mc-connect-2-appdata:
+    driver: local
+  mc-connect-2-custom-extensions:
+    driver: local
+  mc-connect-2-extensions:
+    driver: local
+  mc-connect-2-conf:
+    driver: local
+  mc-connect-2-custom-lib:
+    driver: local
+
+networks:
+  mc-network:
+    driver: bridge
+
