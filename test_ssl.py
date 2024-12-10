@@ -27,7 +27,7 @@ with context.wrap_socket(sock, server_hostname='localhost') as secure_sock:
     print("SSL connection established")
 
     # Send a test message
-    message = b'\x0b I fucking did it MSH|^~\&|SendingApp|SendingFac|ReceivingApp|ReceivingFac|20241208||ADT^A01|123456|P|2.5\x1c\x0d'
+    message = b'\x0bMSH|^~\&|SendingApp|SendingFac|ReceivingApp|ReceivingFac|20241208||ADT^A01|123456|P|2.5\x1c\x0d'
     secure_sock.sendall(message)
     print(f"Sent: {message}")
 

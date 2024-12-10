@@ -24,3 +24,5 @@ target/
 
 # Exclude the mc folder
 mc/
+stunnel_certs/
+/stunnel_certs/

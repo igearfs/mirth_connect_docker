@@ -1,4 +1,4 @@
-# @copywright In-Game event, A Red Flag Syndicate LLC
+# @copyright In-Game event, A Red Flag Syndicate LLC
 #
 # Sponsored by In-Game Event, A Red Flag Syndicate LLC.
 #
@@ -25,15 +25,16 @@ services:
       - "8443:8443"
     volumes:
       - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
-      - ./mc/mc-data/mc-connect-1/appdata:/opt/connect/appdata:rw
-      - ./mc/mc-data/mc-connect-1/custom-extensions:/opt/connect/custom-extensions:rw
-      - ./mc/mc-data/mc-connect-1/custom-lib:/opt/connect/custom-lib:rw
+      - mc-connect-1-appdata:/opt/connect/appdata
+      - mc-connect-1-custom-extensions:/opt/connect/custom-extensions
+      - mc-connect-1-custom-lib:/opt/connect/custom-lib
       - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
     networks:
       - mc-network
     depends_on:
       - mc-postgres
 
+  # Mirth Connect Service 2
   mc-connect-2:
     image: nextgenhealthcare/connect:4.5.2
     container_name: mc-connect-2
@@ -50,9 +51,9 @@ services:
       - "8444:8443"
     volumes:
       - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
-      - ./mc/mc-data/mc-connect-2/appdata:/opt/connect/appdata:rw
-      - ./mc/mc-data/mc-connect-2/custom-extensions:/opt/connect/custom-extensions:rw
-      - ./mc/mc-data/mc-connect-2/custom-lib:/opt/connect/custom-lib:rw
+      - mc-connect-2-appdata:/opt/connect/appdata
+      - mc-connect-2-custom-extensions:/opt/connect/custom-extensions
+      - mc-connect-2-custom-lib:/opt/connect/custom-lib
       - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
     networks:
       - mc-network
@@ -63,14 +64,13 @@ services:
   mc-stunnel:
     build:
       context: .  # Build from the stunnel.Dockerfile in the current directory
-      dockerfile: stunnel.Dockerfile  # Specify the stunnel Dockerfile# Specify the version (not latest)
+      dockerfile: stunnel.Dockerfile
     container_name: mc-stunnel-container
     ports:
       - "6666:6666"
     volumes:
-      - ./stunnel.conf:/etc/stunnel/stunnel.conf  # Stunnel configuration file
-      - ./stunnel_certs/channel1_server_cert.pem:/etc/stunnel/channel1_server_cert.pem
-      - ./stunnel_certs/channel1_server_key.pem:/etc/stunnel/channel1_server_key.pem
+      - ./stunnel.conf:/etc/stunnel/stunnel.conf
+      - ./stunnel_certs/server:/etc/stunnel/certs
     networks:
       - mc-network
     depends_on:
@@ -87,13 +87,14 @@ services:
       - '7777'
       - '5555'
     volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg  # HAProxy configuration
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     networks:
       - mc-network
     depends_on:
       - mc-connect-1
       - mc-connect-2
 
+  # PostgreSQL Database Service
   mc-postgres:
     image: postgres:17.2
     container_name: mc-postgres
@@ -101,11 +102,12 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
-      - ./mc/mc-postgres-data:/var/lib/postgresql/data  # Mount PostgreSQL data volume
-      - ./startup_files/postgres-init:/docker-entrypoint-initdb.d  # Mount the init script here
+      - mc-postgres-data:/var/lib/postgresql/data  # Ensure proper permissions on this directory
+      - ./startup_files/postgres-init:/docker-entrypoint-initdb.d:ro
     networks:
       - mc-network
 
+  # pgAdmin for PostgreSQL Management
   mc-pgadmin:
     image: dpage/pgadmin4
     container_name: mc-pgadmin
@@ -114,6 +116,8 @@ services:
       - PGADMIN_DEFAULT_PASSWORD=admin
     ports:
       - "8080:80"
+    volumes:
+      - mc-pgadmin-data:/var/lib/pgadmin
     networks:
       - mc-network
     depends_on:
@@ -128,19 +132,11 @@ volumes:
     driver: local
   mc-connect-1-custom-extensions:
     driver: local
-  mc-connect-1-extensions:
-    driver: local
-  mc-connect-1-conf:
-    driver: local
   mc-connect-1-custom-lib:
     driver: local
   mc-connect-2-appdata:
     driver: local
   mc-connect-2-custom-extensions:
-    driver: local
-  mc-connect-2-extensions:
-    driver: local
-  mc-connect-2-conf:
     driver: local
   mc-connect-2-custom-lib:
     driver: local
@@ -148,4 +144,3 @@ volumes:
 networks:
   mc-network:
     driver: bridge
-

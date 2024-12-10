@@ -31,12 +31,13 @@ RUN mkdir -p /etc/stunnel/certs
 
 # Copy the Stunnel configuration file and certificates from the local machine
 COPY ./stunnel.conf /etc/stunnel/stunnel.conf
-COPY ./certs/ /etc/stunnel/certs/
+COPY ./stunnel_certs/server /etc/stunnel/certs/
 
 # Ensure the correct permissions for files
 RUN chown -R stunnel:stunnel /etc/stunnel
 RUN chown -R stunnel:stunnel /etc/stunnel/certs
-RUN chmod 644 -R /etc/stunnel/
+RUN chmod 774 -R /etc/stunnel/
+RUN chmod 774 -R /etc/stunnel/certs
 
 # Set the entrypoint to start Stunnel with the given configuration
 USER stunnel
