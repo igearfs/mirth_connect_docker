@@ -101,11 +101,13 @@ services:
     container_name: mc-citusdata-postgres-master
     expose:
       - 5432
+    labels:
+      - "com.citusdata.role=Master"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
-      - ./mc/mc-citusdata-postgres-master-data:/var/lib/postgresql/data  # Updated volume name
+      - ./mc/mc-citusdata-postgres-master-data:/var/lib/postgresql/data 777# Updated volume name
       - ./startup_files/postgres-init:/docker-entrypoint-initdb.d:ro
     networks:
       - mc-network
@@ -127,22 +129,46 @@ services:
       - mc-citusdata-postgres-master
 
 volumes:
-  mc-citusdata-postgres-master-data:  # Updated from mc-postgres-data
+  mc-citusdata-postgres-master-data:
     driver: local
+    driver_opts:
+      device: ./mc/mc-citusdata-postgres-master-data
+      o: bind
   mc-pgadmin-data:
     driver: local
+    driver_opts:
+      device: ./mc/mc-pgadmin-data
+      o: bind
   mc-connect-1-appdata:
     driver: local
+    driver_opts:
+      device: ./mc/mc-connect-1-appdata
+      o: bind
   mc-connect-1-custom-extensions:
     driver: local
+    driver_opts:
+      device: ./mc/mc-connect-1-custom-extensions
+      o: bind
   mc-connect-1-custom-lib:
     driver: local
+    driver_opts:
+      device: ./mc/mc-connect-1-custom-lib
+      o: bind
   mc-connect-2-appdata:
     driver: local
+    driver_opts:
+      device: ./mc/mc-connect-2-appdata
+      o: bind
   mc-connect-2-custom-extensions:
     driver: local
+    driver_opts:
+      device: ./mc/mc-connect-2-custom-extensions
+      o: bind
   mc-connect-2-custom-lib:
     driver: local
+    driver_opts:
+      device: ./mc/mc-connect-2-custom-lib
+      o: bind
 
 networks:
   mc-network:
