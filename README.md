@@ -1,8 +1,8 @@
-# Mirth Connect Architecture
+# Mirth Connect Deployment Architecture
 
 This setup involves two Mirth Connect instances behind HAProxy and Stunnel, connected to a PostgreSQL database. The architecture diagram below illustrates the flow:
 
-![output.png](output.png))
+![output.png](output.png)
 
 ## Components
 
@@ -19,7 +19,7 @@ This setup involves two Mirth Connect instances behind HAProxy and Stunnel, conn
 2. Traffic is routed to **HAProxy** for load balancing.
 3. **HAProxy** directs requests to one of the Mirth Connect instances.
 4. Each Mirth Connect instance communicates with the shared **PostgreSQL** database.
-
+5. If data basee starts to become overloaded we can set it to a cluster with citus.
 
 @copywright In-Game event, A Red Flag Syndicate LLC
 

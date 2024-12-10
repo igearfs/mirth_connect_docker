@@ -7,35 +7,50 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
 
-# Define the channel name at the top (can be passed as an argument)
-CHANNEL_NAME="${1:-channel1}"  # Default to 'channel1' if no argument is provided
+# Define the channel name (must be passed as an argument)
+CHANNEL_NAME="${1}"  # No default value, force user to provide a channel name
 
 # Ensure the channel name is not empty
 if [ -z "$CHANNEL_NAME" ]; then
-    echo "Error: Channel name must be provided."
+    echo "Error: Channel name must be provided as an argument."
     exit 1
 fi
 
-# Define the directory structure for server, client certs, and the CA
-CA_DIR="../stunnel_certs/ca"
-SERVER_DIR="../stunnel_certs/server"
-CLIENT_DIR="../stunnel_certs/client"
+# Define the base directory for certificates
+BASE_DIR="../stunnel_certs"
 
-# Create directories if they don't exist
+# Define the directory for the specific channel
+CHANNEL_DIR="${BASE_DIR}/${CHANNEL_NAME}"
+
+# Check if the channel folder already exists
+if [ -d "$CHANNEL_DIR" ]; then
+    echo "Error: Channel directory '$CHANNEL_DIR' already exists. Please choose a different channel name."
+    exit 1
+fi
+
+# Create channel-specific directory
+mkdir -p "$CHANNEL_DIR"
+
+# Define the directory structure for CA, server, and client certs
+CA_DIR="${CHANNEL_DIR}/ca"
+SERVER_DIR="${CHANNEL_DIR}/server"
+CLIENT_DIR="${CHANNEL_DIR}/client"
+
+# Create directories for CA, server, and client certs
 mkdir -p "$CA_DIR" "$SERVER_DIR" "$CLIENT_DIR"
 
 # Define file paths for the generated files
 CA_KEY="${CA_DIR}/ca_key.pem"
 CA_CERT="${CA_DIR}/ca_cert.pem"
 CA_PEM="${CA_DIR}/ca.pem"
-SERVER_KEY="${SERVER_DIR}/${CHANNEL_NAME}_server_key.pem"
-SERVER_CSR="${SERVER_DIR}/${CHANNEL_NAME}_server_csr.pem"
-SERVER_CERT="${SERVER_DIR}/${CHANNEL_NAME}_server_cert.pem"
-SERVER_PEM="${SERVER_DIR}/${CHANNEL_NAME}_server.pem"
-CLIENT_KEY="${CLIENT_DIR}/${CHANNEL_NAME}_client_key.pem"
-CLIENT_CSR="${CLIENT_DIR}/${CHANNEL_NAME}_client_csr.pem"
-CLIENT_CERT="${CLIENT_DIR}/${CHANNEL_NAME}_client_cert.pem"
-CLIENT_PEM="${CLIENT_DIR}/${CHANNEL_NAME}_client.pem"
+SERVER_KEY="${SERVER_DIR}/server_key.pem"
+SERVER_CSR="${SERVER_DIR}/server_csr.pem"
+SERVER_CERT="${SERVER_DIR}/server_cert.pem"
+SERVER_PEM="${SERVER_DIR}/server.pem"
+CLIENT_KEY="${CLIENT_DIR}/client_key.pem"
+CLIENT_CSR="${CLIENT_DIR}/client_csr.pem"
+CLIENT_CERT="${CLIENT_DIR}/client_cert.pem"
+CLIENT_PEM="${CLIENT_DIR}/client.pem"
 
 # Step 1: Generate the Certificate Authority (CA) key and certificate
 
@@ -94,7 +109,7 @@ chmod 644 "$CLIENT_CSR"
 chmod 644 "$CLIENT_PEM"
 
 # Print out the generated files
-echo "Certificate and key files generated:"
+echo "Certificate and key files generated in '$CHANNEL_DIR':"
 echo "CA Certificate: $CA_CERT"
 echo "CA Private Key: $CA_KEY"
 echo "Server Certificate: $SERVER_CERT"
@@ -106,4 +121,4 @@ echo "Client Private Key: $CLIENT_KEY"
 echo "Client CSR: $CLIENT_CSR"
 echo "Client Combined PEM: $CLIENT_PEM"
 
-echo "All files are preserved in the 'stunnel_certs' directory."
+echo "All files are preserved in the channel directory: $CHANNEL_DIR"

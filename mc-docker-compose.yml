@@ -1,12 +1,3 @@
-# @copyright In-Game event, A Red Flag Syndicate LLC
-#
-# Sponsored by In-Game Event, A Red Flag Syndicate LLC.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-#
-#
 services:
   # Mirth Connect Service 1
   mc-connect-1:
@@ -15,7 +6,7 @@ services:
     user: "1000:1000"
     environment:
       - DATABASE=postgres
-      - DATABASE_URL=jdbc:postgresql://mc-postgres:5432/mirthdb1?currentSchema=mirthdb1
+      - DATABASE_URL=jdbc:postgresql://mc-citusdata-postgres-master:5432/mirthdb1?currentSchema=mirthdb1
       - DATABASE_USERNAME=mirthuser1
       - DATABASE_PASSWORD=mirthpassword1
       - KEYSTORE_STOREPASS=changeme
@@ -32,7 +23,7 @@ services:
     networks:
       - mc-network
     depends_on:
-      - mc-postgres
+      - mc-citusdata-postgres-master
 
   # Mirth Connect Service 2
   mc-connect-2:
@@ -41,7 +32,7 @@ services:
     user: "1000:1000"
     environment:
       - DATABASE=postgres
-      - DATABASE_URL=jdbc:postgresql://mc-postgres:5432/mirthdb2?currentSchema=mirthdb2
+      - DATABASE_URL=jdbc:postgresql://mc-citusdata-postgres-master:5432/mirthdb2?currentSchema=mirthdb2
       - DATABASE_USERNAME=mirthuser2
       - DATABASE_PASSWORD=mirthpassword2
       - KEYSTORE_STOREPASS=changeme
@@ -58,7 +49,7 @@ services:
     networks:
       - mc-network
     depends_on:
-      - mc-postgres
+      - mc-citusdata-postgres-master
 
   # Stunnel Service for SSL Termination
   mc-stunnel:
@@ -94,15 +85,17 @@ services:
       - mc-connect-1
       - mc-connect-2
 
-  # PostgreSQL Database Service
-  mc-postgres:
-    image: postgres:17.2
-    container_name: mc-postgres
+  # Citus Master Node
+  mc-citusdata-postgres-master:
+    image: citusdata/citus:12.1
+    container_name: mc-citusdata-postgres-master
+    expose:
+      - 5432
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
-      - mc-postgres-data:/var/lib/postgresql/data  # Ensure proper permissions on this directory
+      - ./mc/mc-citusdata-postgres-master-data:/var/lib/postgresql/data  # Updated volume name
       - ./startup_files/postgres-init:/docker-entrypoint-initdb.d:ro
     networks:
       - mc-network
@@ -121,10 +114,10 @@ services:
     networks:
       - mc-network
     depends_on:
-      - mc-postgres
+      - mc-citusdata-postgres-master
 
 volumes:
-  mc-postgres-data:
+  mc-citusdata-postgres-master-data:  # Updated from mc-postgres-data
     driver: local
   mc-pgadmin-data:
     driver: local
