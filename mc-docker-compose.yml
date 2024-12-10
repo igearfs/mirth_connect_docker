@@ -1,3 +1,13 @@
+# Copyright (C) 2024 In-Game Event, A Red Flag Syndicate LLC
+#
+# This program is free software: you can redistribute it and/or modify it under the terms of the Server Side Public License, version 1, as published by MongoDB, Inc., with the following additional terms:
+#
+# - Any use of this software in a commercial capacity requires a commercial license agreement with In-Game Event, A Red Flag Syndicate LLC. Contact licence_request@igearfs.com for details.
+#
+# - If you choose not to obtain a commercial license, you must comply with the SSPL terms, which include making publicly available the source code for all programs, tooling, and infrastructure used to operate this software as a service.
+#
+# For licensing inquiries, contact: licence_request@igearfs.com
+
 services:
   # Mirth Connect Service 1
   mc-connect-1:
@@ -16,9 +26,9 @@ services:
       - "8443:8443"
     volumes:
       - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
-      - mc-connect-1-appdata:/opt/connect/appdata
-      - mc-connect-1-custom-extensions:/opt/connect/custom-extensions
-      - mc-connect-1-custom-lib:/opt/connect/custom-lib
+      - ./mc/mc-connect-1-appdata:/opt/connect/appdata
+      - ./mc/mc-connect-1-custom-extensions:/opt/connect/custom-extensions
+      - ./mc/mc-connect-1-custom-lib:/opt/connect/custom-lib
       - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
     networks:
       - mc-network
@@ -42,9 +52,9 @@ services:
       - "8444:8443"
     volumes:
       - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
-      - mc-connect-2-appdata:/opt/connect/appdata
-      - mc-connect-2-custom-extensions:/opt/connect/custom-extensions
-      - mc-connect-2-custom-lib:/opt/connect/custom-lib
+      - ./mc/mc-connect-2-appdata:/opt/connect/appdata
+      - ./mc/mc-connect-2-custom-extensions:/opt/connect/custom-extensions
+      - ./mc/mc-connect-2-custom-lib:/opt/connect/custom-lib
       - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
     networks:
       - mc-network
@@ -110,7 +120,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - mc-pgadmin-data:/var/lib/pgadmin
+      - ./mc/mc-pgadmin-data:/var/lib/pgadmin
     networks:
       - mc-network
     depends_on:

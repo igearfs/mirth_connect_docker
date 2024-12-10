@@ -1,8 +1,15 @@
 @echo off
-REM Sponsored by In-Game Event, A Red Flag Syndicate LLC.
-REM This program is distributed in the hope that it will be useful,
-REM but WITHOUT ANY WARRANTY; without even the implied warranty of
-REM MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+REM Copyright (C) 2024 In-Game Event, A Red Flag Syndicate LLC
+REM
+REM This program is free software: you can redistribute it and/or modify it under the terms of the Server Side Public License, version 1, as published by MongoDB, Inc., with the following additional terms:
+REM
+REM - Any use of this software in a commercial capacity requires a commercial license agreement with In-Game Event, A Red Flag Syndicate LLC. Contact licence_request@igearfs.com for details.
+REM
+REM - If you choose not to obtain a commercial license, you must comply with the SSPL terms, which include making publicly available the source code for all programs, tooling, and infrastructure used to operate this software as a service.
+REM
+REM This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the Server Side Public License for more details.
+REM
+REM For licensing inquiries, contact: licence_request@igearfs.com
 
 REM Set the channel name (default to channel1 if not provided)
 SET CHANNEL_NAME=%1
