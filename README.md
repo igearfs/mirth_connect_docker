@@ -12,7 +12,10 @@ This setup involves two Mirth Connect instances behind HAProxy and Stunnel, conn
 - **Mirth Connect Instances**:
   - Mirth Connect 1
   - Mirth Connect 2
-- **PostgreSQL**: Database backend for both Mirth Connect instances. (if heavy load I sugges )
+- **PostgreSQL**: Database backend for both Mirth Connect instances.
+  - The postgres has 2 databases and schemas in it.. Please see startup_files/postgres-init/mc-postgres-init.sql
+  - If heavy load you can break this up and drop stunnel in front of each docker-compose
+  - Also if you need to the postgres+citus database is set to master so you can add more nodes.
 
 ## Flow
 
@@ -22,21 +25,9 @@ This setup involves two Mirth Connect instances behind HAProxy and Stunnel, conn
 4. Each Mirth Connect instance communicates with the shared **PostgreSQL** database.
 5. If data basee starts to become overloaded we can set it to a cluster with citus.
 
-@copywright In-Game event, A Red Flag Syndicate LLC
 
-Sponsored by In-Game Event, A Red Flag Syndicate LLC.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-
-
-I own all copyrights
 Use at your own risk, You download and run it it's your issue is something breaks.
 Don't cry to me. You were warned.
-You may not sell this code as your own or modify it.
-
 
 Ok - I'll fill all this in with directions later.
 
@@ -46,8 +37,6 @@ This will allow any connection over sll to the STUNNEL.
 
 I will fill this out in a bit and give instructions on how to use it.
 
-Then I will add in cert verification... maybe.. I mean if we firewall and only allow this
-ip to send us messages. Need to do encrypted folders as well. and all that other fun stuff...
 
 Open external ports:
 
@@ -58,6 +47,10 @@ haproxy is balancing the load.
 ok I am tired...
 
 ## License
+
+@copywright In-Game event, A Red Flag Syndicate LLC
+
+This program is distributed in the hope that it will be useful,
 
 This program is licensed under the **Server Side Public License (SSPL), Version 1**, with additional terms as outlined below:
 
