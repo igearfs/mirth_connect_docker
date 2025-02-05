@@ -13,7 +13,7 @@ This setup involves two Mirth Connect instances behind HAProxy and Stunnel, conn
   - Mirth Connect 1
   - Mirth Connect 2
 - **PostgreSQL**: Database backend for both Mirth Connect instances.
-  - The postgres has 2 databases and schemas in it.. Please see startup_files/postgres-init/mc-postgres-init.sql
+  - The postgres has 2 databases and schemas in it. One for each Mirth Connect. Please see startup_files/postgres-init/mc-postgres-init.sql
   - If heavy load you can break this up and drop stunnel in front of each docker-compose
   - Also if you need to the postgres+citus database is set to master so you can add more nodes.
 
