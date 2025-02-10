@@ -1,4 +1,3 @@
-
 # Mirth Connect Deployment Architecture
 
 This setup involves two Mirth Connect instances behind HAProxy and Stunnel, connected to a PostgreSQL database. The architecture diagram below illustrates the flow:
@@ -13,9 +12,12 @@ This setup involves two Mirth Connect instances behind HAProxy and Stunnel, conn
   - Mirth Connect 1
   - Mirth Connect 2
 - **PostgreSQL**: Database backend for both Mirth Connect instances.
-  - The postgres has 2 databases and schemas in it.. Please see startup_files/postgres-init/mc-postgres-init.sql
-  - If heavy load you can break this up and drop stunnel in front of each docker-compose
-  - Also if you need to the postgres+citus database is set to master so you can add more nodes.
+  - The PostgreSQL instance has two databases and schemas. See `startup_files/postgres-init/mc-postgres-init.sql`.
+  - Under heavy load, you can separate components and deploy **Stunnel** in front of each `docker-compose` setup.
+  - The PostgreSQL + Citus database is set to **master**, allowing additional nodes to be added if needed.
+- **Moved Docker passwords and ports to the `.env` file.**
+
+⚠️ **Please change the default passwords before deploying to production.**
 
 ## Flow
 
@@ -23,49 +25,108 @@ This setup involves two Mirth Connect instances behind HAProxy and Stunnel, conn
 2. Traffic is routed to **HAProxy** for load balancing.
 3. **HAProxy** directs requests to one of the Mirth Connect instances.
 4. Each Mirth Connect instance communicates with the shared **PostgreSQL** database.
-5. If data basee starts to become overloaded we can set it to a cluster with citus.
+5. If the database starts to become overloaded, you can set up a **Citus cluster** for scalability.
 
+---
 
-Use at your own risk, You download and run it it's your issue is something breaks.
-Don't cry to me. You were warned.
+## ⚠️ Important Warnings
 
-Ok - I'll fill all this in with directions later.
+### 1. Do NOT Commit `.env` Files
+Your `.env` file contains sensitive credentials. **Ensure it is NOT committed to Git.**  
+Add `.env` to `.gitignore` to prevent accidental exposure:
 
-Right now it allows connections without needing a client cert. I wanted this example out in case anyone else has this same idea.
+```sh
+echo ".env" >> .gitignore
+```
 
-This will allow any connection over sll to the STUNNEL.
+If you accidentally commit `.env`, **remove it immediately**:
 
-I will fill this out in a bit and give instructions on how to use it.
+```sh
+git rm --cached .env
+git commit -m "Removed sensitive .env file"
+git push
+```
 
+⚠️ **If credentials were exposed, immediately rotate your secrets.**
 
-Open external ports:
+---
 
-PGAdmin, STUNNEL, Mirth connects on 8443 and 8444.
-haproxy is balancing the load.
-1 postgres for both connects but seperate database and schemas
+### 2. Volume Data Persistence Warning
+This setup **uses bind mounts (`driver_opts`)** to store persistent data on your host machine.  
+All data for PostgreSQL, Mirth Connect, and logs **will be stored in local directories** under `./mc/`.
 
-ok I am tired...
+#### **What This Means**
+✅ **Data is saved even if you restart Docker.**  
+✅ **You can back up your data easily (by copying the folders).**  
+❌ **If you delete the directories manually, your data is gone!**
 
-## License
+#### **Backup Instructions**
+**To back up your PostgreSQL data manually:**
 
-@copywright In-Game event, A Red Flag Syndicate LLC
+```sh
+tar czf postgres-backup-$(date +%F).tar.gz ./mc/mc-citusdata-postgres-master-data
+```
 
-This program is distributed in the hope that it will be useful,
+**To restore:**
 
-This program is licensed under the **Server Side Public License (SSPL), Version 1**, with additional terms as outlined below:
+```sh
+tar xzf postgres-backup-YYYY-MM-DD.tar.gz -C ./mc/mc-citusdata-postgres-master-data
+```
 
-- **Commercial Use**:
-  - Any use of this software in a commercial capacity, including offering it as part of a managed service or SaaS product, requires a commercial license agreement with **In-Game Event, A Red Flag Syndicate LLC**.
-  - To obtain a commercial license, contact: [licence_request@igearfs.com](mailto:licence_request@igearfs.com).
+---
 
-- **Non-Commercial Use**:
-  - If you choose not to obtain a commercial license, you must comply with the SSPL terms. This includes making publicly available the source code for all programs, tooling, and infrastructure used to operate this software as a service.
+### 3. Running as Root is NOT Recommended
+This setup **runs containers as a specific user (`1000:1000`)** for security reasons.  
+If you **force root permissions (`sudo`)**, ensure file permissions are correct.
+
+To fix any permission issues:
+
+```sh
+sudo chown -R 1000:1000 ./mc/
+```
+
+---
+
+### 4. First-Time Setup
+After cloning the repository, **set up your environment**:
+
+```sh
+cp .env.example .env
+nano .env  # Set your credentials
+```
+
+Then start the containers:
+
+```sh
+docker-compose up -d
+```
+
+---
+
+### 📜 License
+**© 2024 In-Game Event, A Red Flag Syndicate LLC**  
+This program is licensed under the **Server Side Public License (SSPL), version 1**, with additional commercial licensing requirements.
+
+For licensing inquiries, contact:  
+📞 [licence_request@igearfs.com](mailto:licence_request@igearfs.com)
+
+---
+
+## 💡 Need Help?
+If you encounter issues, check logs with:
+
+```sh
+docker-compose logs -f
+```
+
+For additional support, open an issue or contact us at:  
+📞 [contact@igearfs.com](mailto:contact@igearfs.com)
 
 ---
 
 ## No Warranty
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+This program is distributed in the hope that it will be useful, but **WITHOUT ANY WARRANTY**; without even the implied warranty of **MERCHANTABILITY** or **FITNESS FOR A PARTICULAR PURPOSE**.
 
 For licensing inquiries, contact:
 - **License Requests**: [licence_request@igearfs.com](mailto:licence_request@igearfs.com)

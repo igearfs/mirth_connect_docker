@@ -4,6 +4,8 @@
 *.iml
 *.ipr
 
+.env
+
 # User-specific files
 .idea/workspace.xml
 .idea/tasks.xml

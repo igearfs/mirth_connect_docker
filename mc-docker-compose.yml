@@ -9,26 +9,57 @@
 # For licensing inquiries, contact: licence_request@igearfs.com
 
 services:
+
+  # Citus Master Node (PostgreSQL)
+  mc-citusdata-postgres-master:
+    build:
+      context: .
+      dockerfile: postgres.Dockerfile  # Uses the custom Dockerfile based on Citus
+    container_name: mc-citusdata-postgres-master
+    expose:
+      - "5432"
+    labels:
+      - "com.citusdata.role=Master"
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - MC1_DATABASE=${MC1_DATABASE}
+      - MC2_DATABASE=${MC2_DATABASE}
+      - MC1_DATABASE_USERNAME=${MC1_DATABASE_USERNAME}
+      - MC1_DATABASE_PASSWORD=${MC1_DATABASE_PASSWORD}
+      - MC2_DATABASE_USERNAME=${MC2_DATABASE_USERNAME}
+      - MC2_DATABASE_PASSWORD=${MC2_DATABASE_PASSWORD}
+    volumes:
+      - mc-citusdata-postgres-master-data:/var/lib/postgresql/data
+    networks:
+      - mc-network
+
   # Mirth Connect Service 1
   mc-connect-1:
     image: nextgenhealthcare/connect:4.5.2
     container_name: mc-connect-1
     user: "1000:1000"
+    env_file:
+      - .env
+    entrypoint: [ "/usr/local/bin/wait-for-it.sh", "mc-citusdata-postgres-master:5432", "--", "./mcserver"]
     environment:
-      - DATABASE=postgres
-      - DATABASE_URL=jdbc:postgresql://mc-citusdata-postgres-master:5432/mirthdb1?currentSchema=mirthdb1
-      - DATABASE_USERNAME=mirthuser1
-      - DATABASE_PASSWORD=mirthpassword1
-      - KEYSTORE_STOREPASS=changeme
-      - KEYSTORE_KEYPASS=changeme
-      - VMOPTIONS=-Xmx512m
+      - DATABASE=${MC1_DATABASE_TYPE}
+      - DATABASE_URL=${MC1_DATABASE_URL}
+      - DATABASE_USERNAME=${MC1_DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${MC1_DATABASE_PASSWORD}
+      - KEYSTORE_STOREPASS=${MC1_KEYSTORE_STOREPASS}
+      - KEYSTORE_KEYPASS=${MC1_KEYSTORE_KEYPASS}
+      - VMOPTIONS=${MC1_VMOPTIONS}
     ports:
       - "8443:8443"
     volumes:
+      - ./startup_files/scripts/wait-for-it.sh:/usr/local/bin/wait-for-it.sh
       - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
-      - ./mc/mc-connect-1-appdata:/opt/connect/appdata
-      - ./mc/mc-connect-1-custom-extensions:/opt/connect/custom-extensions
-      - ./mc/mc-connect-1-custom-lib:/opt/connect/custom-lib
+      - mc-connect-1-appdata:/opt/connect/appdata
+      - mc-connect-1-custom-extensions:/opt/connect/custom-extensions
+      - mc-connect-1-custom-lib:/opt/connect/custom-lib
       - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
     networks:
       - mc-network
@@ -40,35 +71,40 @@ services:
     image: nextgenhealthcare/connect:4.5.2
     container_name: mc-connect-2
     user: "1000:1000"
+    env_file:
+      - .env
+    entrypoint: [ "/usr/local/bin/wait-for-it.sh", "mc-citusdata-postgres-master:5432", "--", "./mcserver"]
     environment:
-      - DATABASE=postgres
-      - DATABASE_URL=jdbc:postgresql://mc-citusdata-postgres-master:5432/mirthdb2?currentSchema=mirthdb2
-      - DATABASE_USERNAME=mirthuser2
-      - DATABASE_PASSWORD=mirthpassword2
-      - KEYSTORE_STOREPASS=changeme
-      - KEYSTORE_KEYPASS=changeme
-      - VMOPTIONS=-Xmx512m
+      - DATABASE=${MC2_DATABASE_TYPE}
+      - DATABASE_URL=${MC2_DATABASE_URL}
+      - DATABASE_USERNAME=${MC2_DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${MC2_DATABASE_PASSWORD}
+      - KEYSTORE_STOREPASS=${MC2_KEYSTORE_STOREPASS}
+      - KEYSTORE_KEYPASS=${MC2_KEYSTORE_KEYPASS}
+      - VMOPTIONS=${MC2_VMOPTIONS}
     ports:
       - "8444:8443"
     volumes:
+      - ./startup_files/scripts/wait-for-it.sh:/usr/local/bin/wait-for-it.sh
       - ./startup_files/certificates-to-load-into-mc:/opt/connect/certificates-to-load-into-mc:rw
-      - ./mc/mc-connect-2-appdata:/opt/connect/appdata
-      - ./mc/mc-connect-2-custom-extensions:/opt/connect/custom-extensions
-      - ./mc/mc-connect-2-custom-lib:/opt/connect/custom-lib
+      - mc-connect-2-appdata:/opt/connect/appdata
+      - mc-connect-2-custom-extensions:/opt/connect/custom-extensions
+      - mc-connect-2-custom-lib:/opt/connect/custom-lib
       - ./startup_files/scripts/load_certs.sh:/opt/connect/load_certs.sh:rwx
     networks:
       - mc-network
     depends_on:
       - mc-citusdata-postgres-master
+      - mc-connect-1
 
   # Stunnel Service for SSL Termination
   mc-stunnel:
     build:
-      context: .  # Build from the stunnel.Dockerfile in the current directory
+      context: .
       dockerfile: stunnel.Dockerfile
     container_name: mc-stunnel-container
     ports:
-      - "6666:6666"
+      - "${STUNNEL_PORT}:${STUNNEL_PORT}"
     volumes:
       - ./stunnel.conf:/etc/stunnel/stunnel.conf
       - ./stunnel_certs/server:/etc/stunnel/certs
@@ -84,9 +120,9 @@ services:
     image: haproxy:2.4
     container_name: mc-haproxy-container
     expose:
-      - '6666'
-      - '7777'
-      - '5555'
+      - "${HAPROXY_PORT_1}"
+      - "${HAPROXY_PORT_2}"
+      - "${HAPROXY_PORT_3}"
     volumes:
       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
     networks:
@@ -95,34 +131,19 @@ services:
       - mc-connect-1
       - mc-connect-2
 
-  # Citus Master Node
-  mc-citusdata-postgres-master:
-    image: citusdata/citus:12.1
-    container_name: mc-citusdata-postgres-master
-    expose:
-      - 5432
-    labels:
-      - "com.citusdata.role=Master"
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    volumes:
-      - ./mc/mc-citusdata-postgres-master-data:/var/lib/postgresql/data 777# Updated volume name
-      - ./startup_files/postgres-init:/docker-entrypoint-initdb.d:ro
-    networks:
-      - mc-network
-
   # pgAdmin for PostgreSQL Management
   mc-pgadmin:
     image: dpage/pgadmin4
     container_name: mc-pgadmin
+    env_file:
+      - .env
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@mc.com
-      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
     ports:
       - "8080:80"
     volumes:
-      - ./mc/mc-pgadmin-data:/var/lib/pgadmin
+      - mc-pgadmin-data:/var/lib/pgadmin
     networks:
       - mc-network
     depends_on:
@@ -132,41 +153,56 @@ volumes:
   mc-citusdata-postgres-master-data:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-citusdata-postgres-master-data
       o: bind
+
   mc-pgadmin-data:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-pgadmin-data
       o: bind
+
   mc-connect-1-appdata:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-connect-1-appdata
       o: bind
+
   mc-connect-1-custom-extensions:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-connect-1-custom-extensions
       o: bind
+
   mc-connect-1-custom-lib:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-connect-1-custom-lib
       o: bind
+
   mc-connect-2-appdata:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-connect-2-appdata
       o: bind
+
   mc-connect-2-custom-extensions:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-connect-2-custom-extensions
       o: bind
+
   mc-connect-2-custom-lib:
     driver: local
     driver_opts:
+      type: none
       device: ./mc/mc-connect-2-custom-lib
       o: bind
 
